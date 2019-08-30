@@ -21,15 +21,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.openelisglobal.analysis.service.AnalysisService;
+import org.openelisglobal.analysis.valueholder.Analysis;
 import org.openelisglobal.analyzer.service.AnalyzerService;
 import org.openelisglobal.analyzer.valueholder.Analyzer;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerReaderUtil;
 import org.openelisglobal.analyzerresults.valueholder.AnalyzerResults;
+import org.openelisglobal.common.services.StatusService;
+import org.openelisglobal.common.util.ConfigurationProperties;
+import org.openelisglobal.common.util.ConfigurationProperties.Property;
 import org.openelisglobal.common.util.DateUtil;
+import org.openelisglobal.sample.service.SampleService;
 import org.openelisglobal.spring.util.SpringContext;
 import org.openelisglobal.test.service.TestService;
 import org.openelisglobal.test.valueholder.Test;
+
 
 
 public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
@@ -43,23 +50,26 @@ public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
 	static HashMap<String, String> scaleIndexMap = new HashMap<>();
 	static HashMap<String, String> testUnitMap = new HashMap<>();
 	private AnalyzerReaderUtil readerUtil = new AnalyzerReaderUtil();
+	 private final String accession_number = ConfigurationProperties.getInstance().getPropertyValue(Property.ACCESSION_NUMBER_PREFIX);
 
+		String validStatusId = StatusService.getInstance().getStatusID(StatusService.AnalysisStatus.Finalized);
+		AnalysisService analysisDao =  SpringContext.getBean(AnalysisService.class);
 
 	static{
 
 		testHeaderNameMap.put("Glucose", SpringContext.getBean(TestService.class).getTestByName("Glucose"));//.getTestByGUID("0e240569-c095-41c7-bfd2-049527452f16"));
 		testHeaderNameMap.put("Creatinine", SpringContext.getBean(TestService.class).getTestByName("Créatinine"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
 		testHeaderNameMap.put("GPT/ALT", SpringContext.getBean(TestService.class).getTestByName("Transaminases GPT (37°C)"));//.getTestByGUID("cecea358-1fa0-44b2-8185-d8c010315f78"));
-		//testHeaderNameMap.put("Cholesterol", SpringContext.getBean(TestService.class).getTestByName("Cholestérol total"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
-		//testHeaderNameMap.put("Triglycerides", SpringContext.getBean(TestService.class).getTestByName("Triglycérides"));//.getTestByGUID("cecea358-1fa0-44b2-8185-d8c010315f78"));
+		testHeaderNameMap.put("Cholesterol", SpringContext.getBean(TestService.class).getTestByName("Cholestérol total"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
+		testHeaderNameMap.put("Triglycerides", SpringContext.getBean(TestService.class).getTestByName("Triglycérides"));//.getTestByGUID("cecea358-1fa0-44b2-8185-d8c010315f78"));
 		//testHeaderNameMap.put("GOT/AST", SpringContext.getBean(TestService.class).getTestByName("Transaminases"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
-		//testHeaderNameMap.put("GOT/AST", SpringContext.getBean(TestService.class).getTestByName("Transaminases GOT (37°C)"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
+		testHeaderNameMap.put("GOT/AST", SpringContext.getBean(TestService.class).getTestByName("Transaminases GOT (37°C)"));//.getTestByGUID("fe6405c8-f96b-491b-95c9-b1f635339d6a"));
 
 
 		AnalyzerService analyzerService = SpringContext.getBean(AnalyzerService.class);
 		Analyzer analyzer = analyzerService.getAnalyzerByName("FullyAnalyzer");
 		ANALYZER_ID = analyzer.getId();
-		System.out.println(testHeaderNameMap);
+		//System.out.println(testHeaderNameMap);
 
 
 	}
@@ -74,7 +84,7 @@ public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
 		testUnitMap.put("Triglycerides", "/1|g/l");
 		testUnitMap.put("GOT/AST", "/1|UI/L");
 
-		System.out.println(testUnitMap);
+		//System.out.println(testUnitMap);
 	}
 
 	/* (non-Javadoc)
@@ -100,24 +110,41 @@ public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
 		return DateUtil.convertStringDateToTimestampWithPattern(dateTime, DATE_PATTERN);
 	}
 
-	@Override
-	public String getError() {
-		return "Fully analyzer unable to write to database";
-	}
-	private void addValueToResults(List<AnalyzerResults> resultList, AnalyzerResults result) {
+    @Override
+    public String getError() {
+        return "Fully analyzer unable to write to database";
+    }
+    
+private void addValueToResults(List<AnalyzerResults> resultList, AnalyzerResults result)  {
+		
+		if (result.getIsControl()){
+			resultList.add(result);
+			return;
+		}
+		
+		SampleService sampleServ=SpringContext.getBean(SampleService.class);
+		if (!result.getAccessionNumber().startsWith(accession_number) || sampleServ.getSampleByAccessionNumber(result.getAccessionNumber())==null )
+			return;
+		
+		List<Analysis> analyses=analysisDao.getAnalysisByAccessionAndTestId(result.getAccessionNumber(), result.getTestId());
+	    for(Analysis analysis :analyses) {
+			if(analysis.getStatusId().equals(validStatusId))
+				return;
+		} 
+		
 		resultList.add(result);
-
-		AnalyzerResults resultFromDB = readerUtil.createAnalyzerResultFromDB(result);
-		if (resultFromDB != null) {
-			resultList.add(resultFromDB);
-		}
-
-	}
+	
+	    AnalyzerResults resultFromDB = this.readerUtil.createAnalyzerResultFromDB(result);
+	    if (resultFromDB != null)
+	      resultList.add(resultFromDB);
+	    
+	  }
+	
+	
+	
 	private boolean manageColumnsIndex(List<String> lines) {
-		if(getColumnsLine(lines)<0) {
-			return false;
-		}
-
+		if(getColumnsLine(lines)<0) return false;
+			
 		for (Integer i = 0; i < lines.size(); i++) {
 			String line = lines.get(i);
 			if(line.startsWith("Test:")){
@@ -134,50 +161,65 @@ public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
 	}
 
 	private void createAnalyzerResultFromLine(List<String> lines, List<AnalyzerResults> resultList) {
-
-
-
-		for (String key : indexTestMap.keySet()) {
-
-
-			String dateLine=lines.get(Integer.parseInt(key)+1);
-			String[] dateTextLine=dateLine.split(":");
-			String dateTime=dateTextLine[1].trim();
-			dateTime=dateTime.substring(0, 8);
-			dateTime=dateTime.substring(0, 2)+"/"+dateTime.substring(2, 4)+"/"+dateTime.substring(4, 8)+" "+"00:00:00";
-
-			int resultIndex=Integer.parseInt(key)+5;
-
-			if(resultIndex==lines.size()) {
-				continue;
-			}
-			lines.add("-------------");
-			while(!lines.get(resultIndex).startsWith("------")){
-				String line=lines.get(resultIndex);
-				String[] resultsLine=line.split(DELIMITER);
-				String testKey = indexTestMap.get(key);
-				AnalyzerResults aResult = new AnalyzerResults();
-				aResult.setTestId(testHeaderNameMap.get(testKey).getId());
-				aResult.setTestName(testHeaderNameMap.get(testKey).getName());
-				aResult.setAnalyzerId(ANALYZER_ID);
-				aResult.setUnits(setUnitByTestKey(testKey));
-				aResult.setResult(resultsLine[0].trim());
-				aResult.setIsControl(CheckControl (resultsLine[resultsLine.length-1].trim()));
-				//aResult.setAccessionNumber(PutSymbolInAccessionNumber(resultsLine[resultsLine.length-1].trim()));
-				String currentAccessionNumber = resultsLine[resultsLine.length-1].trim();
-				// String currentAccessionNumber = PutSymbolInAccessionNumber(resultsLine[resultsLine.length-1].trim());
-
-				aResult.setAccessionNumber(currentAccessionNumber);
-
-				aResult.setCompleteDate(getTimestampFromDate(dateTime));
-				if (currentAccessionNumber.contains("CHBKE")||currentAccessionNumber.contains(CONTROL_ACCESSION_PREFIX)) {
-					addValueToResults(resultList, aResult);
-				}
-
-				resultIndex++;
-
-			}
-
+	
+		int labno_index=0;
+		int end=0;
+		
+            
+    	for (String key : indexTestMap.keySet()) {
+    		
+    		
+    		String dateLine=lines.get(Integer.parseInt(key)+1);
+    		String[] dateTextLine=dateLine.split(":");
+    		String dateTime=dateTextLine[1].trim();
+    		dateTime=dateTime.substring(0, 8);
+    		dateTime=dateTime.substring(0, 2)+"/"+dateTime.substring(2, 4)+"/"+dateTime.substring(4, 8)+" "+"00:00:00";
+    		    		
+    		
+    		int resultIndex=Integer.parseInt(key)+5;
+    		
+    		if(resultIndex==lines.size()) continue;
+    		lines.add("-------------");
+    		while(!lines.get(resultIndex).startsWith("------")){
+    			String line=lines.get(resultIndex);
+    			String[] resultsLine=line.split(DELIMITER);
+     			String testKey = indexTestMap.get(key);
+     			
+        		AnalyzerResults aResult = new AnalyzerResults();
+        		
+        		String currentAccessionNumber = resultsLine[resultsLine.length-1].trim();
+        		String AccessionNumber=currentAccessionNumber;
+        		labno_index = currentAccessionNumber.indexOf(accession_number);     
+    			end = currentAccessionNumber.length();
+    			//System.out.println("labno_index="+labno_index + " end="+end);
+    					
+        		 if (labno_index>=0){      		
+        		AccessionNumber=currentAccessionNumber.substring(labno_index, end).trim();
+        		    		 }
+        		        		
+        		aResult.setTestId(testHeaderNameMap.get(testKey).getId());	        		
+        		aResult.setTestName(testHeaderNameMap.get(testKey).getName());
+        		aResult.setAnalyzerId(ANALYZER_ID);
+                aResult.setUnits(setUnitByTestKey(testKey));
+        		aResult.setResult(resultsLine[0].trim());
+                aResult.setIsControl(CheckControl (resultsLine[resultsLine.length-1].trim()));
+                aResult.setAccessionNumber(AccessionNumber);
+        		
+            	aResult.setCompleteDate(getTimestampFromDate(dateTime));
+               //if (currentAccessionNumber.contains(CONTROL_ACCESSION_PREFIX))
+                              	
+            	//System.out.println("labno="+ AccessionNumber);
+            	//System.out.println("TEST_INDEX="+key + "/"+aResult.getAccessionNumber()+"/"+aResult.getTestName()+"/"+aResult.getResult()+"*** "+dateTime);
+            	//System.out.println(aResult.getAccessionNumber()+"/"+aResult.getTestName()+"/"+aResult.getResult()+"*** "+dateTime);
+            	
+        		addValueToResults(resultList, aResult);
+        		
+    			resultIndex++;
+    	
+                	
+                	
+          }
+    		
 
 		}
 
@@ -217,15 +259,16 @@ public class FullyAnalyzerImplementation extends AnalyzerLineInserter {
 
 	public int getColumnsLine(List<String> lines) {
 		for(int k=0;k<lines.size();k++){
-			if(lines.get(k).contains("RESULT")&&
-					lines.get(k).contains("O.D.")&&
-					lines.get(k).contains("Well O.D.")&&
-					lines.get(k).contains("ID")&&
-					lines.get(k).contains("Patient")) {
+		if(lines.get(k).contains("RESULT")&&
+				lines.get(k).contains("O.D.")&&
+				lines.get(k).contains("Well O.D.")&&
+				lines.get(k).contains("ID")&&
+				lines.get(k).contains("Patient"))
+			
 				return k;
 			}
 
-		}
+		
 
 		return -1;
 	}

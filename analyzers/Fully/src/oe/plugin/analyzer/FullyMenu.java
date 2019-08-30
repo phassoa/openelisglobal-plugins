@@ -19,7 +19,6 @@ package oe.plugin.analyzer;
 import org.openelisglobal.common.services.PluginMenuService;
 import org.openelisglobal.common.services.PluginMenuService.KnownMenu;
 import org.openelisglobal.common.util.ConfigurationProperties;
-import org.openelisglobal.menu.util.MenuUtil;
 import org.openelisglobal.menu.valueholder.Menu;
 import org.openelisglobal.plugin.MenuPlugin;
 
