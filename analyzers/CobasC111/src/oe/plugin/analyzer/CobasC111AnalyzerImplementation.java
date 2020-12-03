@@ -21,11 +21,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.openelisglobal.analysis.service.AnalysisService;
+import org.openelisglobal.analysis.valueholder.Analysis;
 import org.openelisglobal.analyzer.service.AnalyzerService;
 import org.openelisglobal.analyzer.valueholder.Analyzer;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
 import org.openelisglobal.analyzerresults.valueholder.AnalyzerResults;
+import org.openelisglobal.common.services.StatusService;
+import org.openelisglobal.common.util.ConfigurationProperties;
+import org.openelisglobal.common.util.ConfigurationProperties.Property;
 import org.openelisglobal.common.util.DateUtil;
+import org.openelisglobal.sample.service.SampleService;
 import org.openelisglobal.spring.util.SpringContext;
 import org.openelisglobal.test.service.TestService;
 import org.openelisglobal.test.valueholder.Test;
@@ -38,13 +44,16 @@ public class CobasC111AnalyzerImplementation extends AnalyzerLineInserter {
 	static String DATE_PATTERN = "yyyyMMdd";
 
 	private static final String CONTROL_ACCESSION_PREFIX = "PCC";
-	private static final String[] units = new String[100];
-	private static final int[] scaleIndex = new int[100];
+	//private static final String[] units = new String[100];
+	//private static final int[] scaleIndex = new int[100];
 	private static final String DELIMITER = ";";
+    private final String accession_number_prefix = ConfigurationProperties.getInstance().getPropertyValue(Property.ACCESSION_NUMBER_PREFIX);
 	double result = Double.NaN;
 	String line;
 	String[] data;
-
+	String validStatusId = StatusService.getInstance().getStatusID(StatusService.AnalysisStatus.Finalized);
+    	AnalysisService analysisDao =  SpringContext.getBean(AnalysisService.class);
+        
 
 
 	static HashMap<String, Test> testNameMap = new HashMap<>();
@@ -55,7 +64,12 @@ public class CobasC111AnalyzerImplementation extends AnalyzerLineInserter {
 		testNameMap.put("GLU2", SpringContext.getBean(TestService.class).getTestByName("Glucose"));
 		testNameMap.put("CREJ2", SpringContext.getBean(TestService.class).getTestByName("Créatinine"));
 		testNameMap.put("ALTL", SpringContext.getBean(TestService.class).getTestByName("Transaminases GPT (37°C)"));
-
+		testNameMap.put("ASTL", SpringContext.getBean(TestService.class).getTestByName("Transaminases G0T (37°C)"));
+        testNameMap.put("CHOL2", SpringContext.getBean(TestService.class).getTestByName("Cholestérol total"));
+        testNameMap.put("HDLC3", SpringContext.getBean(TestService.class).getTestByName("Cholestérol HDL"));
+        testNameMap.put("TRIGL", SpringContext.getBean(TestService.class).getTestByName("Triglycérides"));
+            
+            
 		System.out.println(testNameMap);
 
 		AnalyzerService analyzerService = SpringContext.getBean(AnalyzerService.class);
@@ -72,6 +86,11 @@ public class CobasC111AnalyzerImplementation extends AnalyzerLineInserter {
 		testUnitMap.put("CREJ2", "/1|10^6/uL");
 		testUnitMap.put("ALTL", "/1|g/dL");
 
+ 		testUnitMap.put("ASTL", "/1|g/dL");
+        testUnitMap.put("CHOL2", "/1|g/L");
+        testUnitMap.put("HDLC3", "/1|g/L");
+        testUnitMap.put("TRIGL", "/1|g/L");
+        
 		System.out.println(testUnitMap);
 
 
@@ -88,7 +107,7 @@ public class CobasC111AnalyzerImplementation extends AnalyzerLineInserter {
 		for (Integer j = 1; j < lines.size(); j++) {
 			System.out.println("processing line #: "  + j);
 			line = lines.get(j);
-			data = line.split(";");
+			data = line.split(DELIMITER);
 
 			if (line.length() == 0 || data.length == 0) {
 				continue;
@@ -97,81 +116,45 @@ public class CobasC111AnalyzerImplementation extends AnalyzerLineInserter {
 
 			String currentAccessionNumber = data [10].replace("\"", "").trim();
 			//--------------------------
-			if (currentAccessionNumber.contains("CHRSP")||currentAccessionNumber.startsWith(CONTROL_ACCESSION_PREFIX)) {
+        	AnalyzerResults aResult = new AnalyzerResults();
+        	
+            SampleService sampleServ=SpringContext.getBean(SampleService.class);
+            System.out.println("labno: "  + currentAccessionNumber);
+        	                  	
+        	if (currentAccessionNumber.startsWith(accession_number_prefix)||sampleServ.getSampleByAccessionNumber(aResult.getAccessionNumber())!=null ) {         
+        		         
+        		
+        	        String testKey = data [8].replace("\"", "").trim();
+                    String date = data [4].replace("\"", "");                       
+                                
+                    aResult.setTestId(testNameMap.get(testKey).getId());	        		
+                    aResult.setTestName(testNameMap.get(testKey).getName());
+              System.out.println("Result: "  + data [12].replace("\"", "").trim());       
+                    aResult.setResult(data [12].replace("\"", "").trim());
+                    aResult.setAnalyzerId(ANALYZER_ID);
+                    aResult.setUnits(data [13].replace("\"", ""));
+                    aResult.setAccessionNumber(data [10].replace("\"", "").trim());
+               //   aResult.setReadOnly(CheckReadOnly (testKey));
+                    aResult.setIsControl(CheckControl (currentAccessionNumber));
+			        aResult.setCompleteDate(getTimestampFromDate(date));
+                              
 
-				//---------------------------
-				if (data [3].contains("690") || data [3].contains("685") || data [3].contains("767")) {
-					String testKey = data [8].replace("\"", "").trim();
-					//String date = data [4].replace("\"", "").concat(data [5].replace("\"", ""));
-					String date = data [4].replace("\"", "");
-					AnalyzerResults aResult = new AnalyzerResults();
-
-					aResult.setTestId(testNameMap.get(testKey).getId());
-					aResult.setTestName(testNameMap.get(testKey).getName());
-					aResult.setResult(data [12].replace("\"", "").trim());
-					aResult.setAnalyzerId(ANALYZER_ID);
-					aResult.setUnits(data [13].replace("\"", ""));
-					aResult.setAccessionNumber(data [10].replace("\"", "").trim());
-					//                               aResult.setReadOnly(CheckReadOnly (testKey));
-					aResult.setIsControl(CheckControl (currentAccessionNumber));
-					aResult.setCompleteDate(getTimestampFromDate(date));
-
-
-					System.out.println("***" + aResult.getAccessionNumber() + " " + aResult.getCompleteDate() + " " + aResult.getResult());
-
-					results.add(aResult);
-
-
-					//else {
-					//if (data[j].length() == 0) {
-					//	break;
-					//}
-
-				}
+	           	System.out.println("***" + aResult.getAccessionNumber() + " " + aResult.getCompleteDate() + " " + aResult.getResult());
+	            List<Analysis> analyses=analysisDao.getAnalysisByAccessionAndTestId(aResult.getAccessionNumber(), aResult.getTestId());
+				  
+	           	
+	           	for(Analysis analysis :analyses) {
+						if(!analysis.getStatusId().equals(validStatusId)){
+							results.add(aResult);	
+						}else break;
+                    
+					}
 			}
 		}
 		return persistImport(currentUserId, results);
 	}
 
-	/*
-
-   private String setUnitByTestKey(String testKey) {
-
-         String unitKey = testUnitMap.get(testKey);
-                int debut = unitKey.indexOf("|");
-                int debutChaineUnit = 1 + debut;
-                String unit = unitKey.substring(debutChaineUnit);
-        return unit;
-    }
-
-
-   private String setResultByTest(int i, String testKey) {
-
-                String unitKey = testUnitMap.get(testKey);
-                int debut = unitKey.indexOf("|");
-                String scale = unitKey.substring(1, debut);
-                String operateur = unitKey.substring(0,1);
-                        if (operateur.equals("/")){
-
-                                 try{
-                                      result = Double.parseDouble(data[i].trim())/Integer.parseInt(scale);
-		                     }catch( NumberFormatException nfe){
-					//no-op -- defaults to NAN
-                                        }
-                                  }
-                                else if (operateur.equals("*")){
-
-                                 try{
-                                      result = Double.parseDouble(data[i].trim())*Integer.parseInt(scale);
-		                     }catch( NumberFormatException nfe){
-					//no-op -- defaults to NAN
-                                        }
-                                }
-
-                       String TestResult=String.valueOf(result);
-              return TestResult;
-     }
-	 */
+	
 	private boolean CheckControl (String AccessionPrefix){
 
 		boolean IsControl= false;

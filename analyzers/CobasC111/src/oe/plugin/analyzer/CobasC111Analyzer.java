@@ -33,6 +33,12 @@ public class CobasC111Analyzer implements AnalyzerImporterPlugin {
         nameMappinng.add(new PluginAnalyzerService.TestMapping("GLU2", "Glucose"));
         nameMappinng.add(new PluginAnalyzerService.TestMapping("CREJ2", "Créatinine"));
         nameMappinng.add(new PluginAnalyzerService.TestMapping("ALTL", "Transaminases GPT (37°C)"));
+        nameMappinng.add(new PluginAnalyzerService.TestMapping("ASTL", "Transaminases G0T (37°C)"));
+        nameMappinng.add(new PluginAnalyzerService.TestMapping("CHOL2", "Cholestérol total"));
+        nameMappinng.add(new PluginAnalyzerService.TestMapping("HDLC3", "Cholestérol HDL"));
+        nameMappinng.add(new PluginAnalyzerService.TestMapping("TRIGL", "Triglycérides"));
+        
+         
         getInstance().addAnalyzerDatabaseParts("CobasC111Analyzer", "Plugin for Cobas C111 analyzer",nameMappinng);
         getInstance().registerAnalyzer(this);
         return true;
@@ -54,7 +60,7 @@ public class CobasC111Analyzer implements AnalyzerImporterPlugin {
 
 	public int getColumnsLine(List<String> lines) {
 		for(int k=0;k<lines.size();k++){
-		if(lines.get(k).contains("Instr"))
+		if(lines.get(k).contains("Instr")&& lines.get(k).contains("Msg"))
 		return k;
 			
 		}
