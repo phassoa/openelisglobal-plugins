@@ -16,20 +16,21 @@
 
 package oe.plugin.analyzer;
 
-import us.mn.state.health.lims.analyzerimport.analyzerreaders.AnalyzerLineInserter;
-import us.mn.state.health.lims.common.services.PluginAnalyzerService;
-import us.mn.state.health.lims.plugin.AnalyzerImporterPlugin;
+import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
+import org.openelisglobal.common.services.PluginAnalyzerService;
+import org.openelisglobal.plugin.AnalyzerImporterPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.openelisglobal.common.services.PluginAnalyzerService.getInstance;
 public class TaqMan96VLAnalyzer
 implements AnalyzerImporterPlugin
 {
 
 private static String DELIMITER = "\\t";
-private static final CharSequence COBAS_TAQMAN_VL_INDICATOR = "HI2CAP962";
-private static final CharSequence COBAS_TAQMAN_VL_INDICATOR2 = "IFS96CDC2";
+private static final CharSequence COBAS_TAQMAN_VL_INDICATOR = "HI2CAP96";
+private static final CharSequence COBAS_TAQMAN_VL_INDICATOR2 = "IFS96CDC";
 
 int InstrumentIndex = -1;
 
@@ -37,7 +38,7 @@ public boolean connect() {
 //  List nameMappinng = new ArrayList();
   List<PluginAnalyzerService.TestMapping> nameMappinng = new ArrayList<PluginAnalyzerService.TestMapping>();
   nameMappinng.add(new PluginAnalyzerService.TestMapping("Result", "Viral Load"));
-  PluginAnalyzerService.getInstance().addAnalyzerDatabaseParts("TaqMan96VLAnalyzer2", "Plugin for Cobas TaqMan96 VL analyzer-2", nameMappinng);
+  PluginAnalyzerService.getInstance().addAnalyzerDatabaseParts("TaqMan96VLAnalyzer", "Plugin for Cobas TaqMan96 VL analyzer", nameMappinng);
   PluginAnalyzerService.getInstance().registerAnalyzer(this);
 
   return true;

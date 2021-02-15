@@ -31,7 +31,7 @@ public class CobasIntegra400 implements AnalyzerImporterPlugin {
 
     public boolean connect(){
         List<PluginAnalyzerService.TestMapping> nameMappinng = new ArrayList<PluginAnalyzerService.TestMapping>();
-        
+        /* ---------------- for retroci -----------------------*/
         
         nameMappinng.add(new PluginAnalyzerService.TestMapping("ALTL", "Transaminases ALTL"));
         nameMappinng.add(new PluginAnalyzerService.TestMapping("ASTL", "Transaminases ASTL"));
@@ -41,7 +41,8 @@ public class CobasIntegra400 implements AnalyzerImporterPlugin {
         getInstance().addAnalyzerDatabaseParts("CobasIntegra400", "Plugin for Cobas Integra 400",nameMappinng);
         getInstance().registerAnalyzer(this);
         return true;
-        /* ---------------- 
+        
+        /* ---------------- for regional------
         nameMappinng.add(new PluginAnalyzerService.TestMapping("ALTL", "Transaminases GPT (37°C)"));
         nameMappinng.add(new PluginAnalyzerService.TestMapping("ASTL", "Transaminases"));
         nameMappinng.add(new PluginAnalyzerService.TestMapping("CREJ2", "Créatinine"));

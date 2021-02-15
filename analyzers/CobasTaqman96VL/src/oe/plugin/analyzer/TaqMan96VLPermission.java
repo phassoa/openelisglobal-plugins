@@ -16,10 +16,10 @@
 
 package oe.plugin.analyzer;
 
-import us.mn.state.health.lims.common.services.PluginPermissionService;
-import us.mn.state.health.lims.plugin.PermissionPlugin;
-import us.mn.state.health.lims.role.valueholder.Role;
-import us.mn.state.health.lims.systemmodule.valueholder.SystemModule;
+import org.openelisglobal.common.services.PluginPermissionService;
+import org.openelisglobal.plugin.PermissionPlugin;
+import org.openelisglobal.role.valueholder.Role;
+import org.openelisglobal.systemmodule.valueholder.SystemModule;
 
 /**
  */
@@ -28,7 +28,7 @@ public class TaqMan96VLPermission extends PermissionPlugin
   protected boolean insertPermission()
   {
     PluginPermissionService service = new PluginPermissionService();
-    SystemModule module = service.getOrCreateSystemModule("AnalyzerResults", "TaqMan96VLAnalyzer2", "Results->Analyzer->TaqMan96VLAnalyzer2");
+    SystemModule module = service.getOrCreateSystemModule("AnalyzerResults", "TaqMan96VLAnalyzer", "Results->Analyzer->TaqMan96VLAnalyzer");
     Role role = service.getSystemRole("Virology automatic");
     return service.bindRoleToModule(role, module);
   }

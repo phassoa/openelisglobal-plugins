@@ -21,12 +21,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.openelisglobal.analysis.service.AnalysisService;
+import org.openelisglobal.analysis.valueholder.Analysis;
 import org.openelisglobal.analyzer.service.AnalyzerService;
 import org.openelisglobal.analyzer.valueholder.Analyzer;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerReaderUtil;
 import org.openelisglobal.analyzerresults.valueholder.AnalyzerResults;
+import org.openelisglobal.common.services.StatusService;
+import org.openelisglobal.common.util.ConfigurationProperties;
 import org.openelisglobal.common.util.DateUtil;
+import org.openelisglobal.sample.service.SampleService;
+import org.openelisglobal.common.util.ConfigurationProperties.Property;
 import org.openelisglobal.spring.util.SpringContext;
 import org.openelisglobal.test.service.TestService;
 import org.openelisglobal.test.valueholder.Test;
@@ -47,6 +53,14 @@ public class FacsPrestoAnalyzerImplementation extends AnalyzerLineInserter{
 
 	private AnalyzerReaderUtil readerUtil = new AnalyzerReaderUtil();
 	private String error;
+	
+	//private final String projectCode = StringUtil.getMessageForKey("sample.entry.project.LART");
+	private final String accession_number_prefix = ConfigurationProperties.getInstance().getPropertyValue(Property.ACCESSION_NUMBER_PREFIX);
+
+	String validStatusId = StatusService.getInstance().getStatusID(StatusService.AnalysisStatus.Finalized);
+	AnalysisService analysisDao =  SpringContext.getBean(AnalysisService.class);
+	  
+	
 	Test test = SpringContext.getBean(TestService.class).getActiveTestByName("Dénombrement des lymphocytes  CD4 (%)").get(0);
 
 	static{
@@ -115,15 +129,33 @@ public class FacsPrestoAnalyzerImplementation extends AnalyzerLineInserter{
 		return this.error;
 	}
 
-	private void addValueToResults(List<AnalyzerResults> resultList, AnalyzerResults result)
-	{
-		resultList.add(result);
+	private void addValueToResults(List<AnalyzerResults> resultList, AnalyzerResults result)  {
+		
+		SampleService sampleServ=SpringContext.getBean(SampleService.class);  
+		
+		//SampleService sampleServ=new SampleService(result.getAccessionNumber());
+		  
+		  
+		  if (result.getIsControl()){
+				resultList.add(result);
+				return;
+			}
+			
+			
+			List<Analysis> analyses=analysisDao.getAnalysisByAccessionAndTestId(result.getAccessionNumber(), result.getTestId());
+		    for(Analysis analysis :analyses) {
+				if(analysis.getStatusId().equals(validStatusId))
+					return;
+			}
+		    
+		    if (result.getAccessionNumber().startsWith(accession_number_prefix) && sampleServ.getSampleByAccessionNumber(result.getAccessionNumber())!=null ){resultList.add(result);
 
-		AnalyzerResults resultFromDB = this.readerUtil.createAnalyzerResultFromDB(result);
-		if (resultFromDB != null) {
-			resultList.add(resultFromDB);
-		}
-	}
+		    AnalyzerResults resultFromDB = this.readerUtil.createAnalyzerResultFromDB(result);
+		    if (resultFromDB != null)
+		      resultList.add(resultFromDB);}
+		    
+		  }  
+	  
 
 	private void createAnalyzerResultFromLine(String line, List<AnalyzerResults> resultList)  {
 

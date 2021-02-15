@@ -16,6 +16,8 @@
 
 package oe.plugin.analyzer;
 
+import java.util.Locale;
+
 import org.openelisglobal.common.services.PluginMenuService;
 import org.openelisglobal.common.services.PluginMenuService.KnownMenu;
 import org.openelisglobal.common.util.ConfigurationProperties;
@@ -42,9 +44,9 @@ public class FullyMenu extends MenuPlugin {
 
         service.addMenu(menu);
 		//Analyzer name in English
-        service.insertLanguageKeyValue("banner.menu.results.Fullyanalyzer","Biochemestry: Fully analyzer importer", ConfigurationProperties.LOCALE.ENGLISH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.Fullyanalyzer","Biochemistry: Fully", Locale.ENGLISH.toLanguageTag());
 		//Analyzer name in French
-        service.insertLanguageKeyValue("banner.menu.results.Fullyanalyzer","Biochimie: Fully", ConfigurationProperties.LOCALE.FRENCH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.Fullyanalyzer","Biochimie: Fully", Locale.FRENCH.toLanguageTag());
 	}
 	
 }

@@ -59,7 +59,7 @@ public class FacsCantoIIImplementation extends AnalyzerLineInserter {
 		testHeaderNameMap.put("CD4 %Parent", SpringContext.getBean(TestService.class).getTestByName("CD4 percentage count"));
 		// testHeaderNameMap.put("Q2 %Parent", SpringContext.getBean(TestService.class).getTestByName("Dénombrement des lymphocytes  CD4 (%)"));
 
-		System.out.println(testHeaderNameMap);
+		//System.out.println(testHeaderNameMap);
 		AnalyzerService analyzerService = SpringContext.getBean(AnalyzerService.class);
 		Analyzer analyzer = analyzerService.getAnalyzerByName("FacsCantoII");
 		ANALYZER_ID = analyzer.getId();

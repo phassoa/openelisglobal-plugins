@@ -16,10 +16,13 @@
 
 package oe.plugin.analyzer;
 
-import us.mn.state.health.lims.common.services.PluginMenuService;
-import us.mn.state.health.lims.common.util.ConfigurationProperties;
-import us.mn.state.health.lims.menu.valueholder.Menu;
-import us.mn.state.health.lims.plugin.MenuPlugin;
+import java.util.Locale;
+
+import org.openelisglobal.common.services.PluginMenuService;
+import org.openelisglobal.common.services.PluginMenuService.KnownMenu;
+import org.openelisglobal.common.util.ConfigurationProperties;
+import org.openelisglobal.menu.valueholder.Menu;
+import org.openelisglobal.plugin.MenuPlugin;
 
 public class TaqMan96VLMenu extends MenuPlugin
 {
@@ -34,14 +37,14 @@ public class TaqMan96VLMenu extends MenuPlugin
 
     menu.setElementId("taqman96_vl_analyzer_plugin2");
 
-    menu.setActionURL("/AnalyzerResults.do?type=TaqMan96VLAnalyzer2");
-    menu.setDisplayKey("banner.menu.results.taqman96vlanalyzer2");
+    menu.setActionURL("/AnalyzerResults.do?type=TaqMan96VLAnalyzer");
+    menu.setDisplayKey("banner.menu.results.taqman96vlanalyzer");
     menu.setOpenInNewWindow(false);
 
     service.addMenu(menu);
 
-    service.insertLanguageKeyValue("banner.menu.results.taqman96vlanalyzer2", "Virology: Cobas TaqMan96-2: Viral Load", ConfigurationProperties.LOCALE.ENGLISH.getRepresentation());
+    service.insertLanguageKeyValue("banner.menu.results.taqman96vlanalyzer", "Virology: Cobas TaqMan96 - Viral Load", Locale.ENGLISH.toLanguageTag());
 
-    service.insertLanguageKeyValue("banner.menu.results.taqman96vlanalyzer2", "Virologie: Cobas TaqMan96-2: Charge Virale", ConfigurationProperties.LOCALE.FRENCH.getRepresentation());
+    service.insertLanguageKeyValue("banner.menu.results.taqman96vlanalyzer", "Virologie: Cobas TaqMan96 - Charge Virale", Locale.FRENCH.toLanguageTag());
   }
 }

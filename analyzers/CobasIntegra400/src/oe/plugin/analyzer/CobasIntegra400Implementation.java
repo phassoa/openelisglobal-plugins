@@ -22,11 +22,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.openelisglobal.analysis.service.AnalysisService;
+import org.openelisglobal.analysis.valueholder.Analysis;
 import org.openelisglobal.analyzer.service.AnalyzerService;
 import org.openelisglobal.analyzer.valueholder.Analyzer;
 import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
 import org.openelisglobal.analyzerresults.valueholder.AnalyzerResults;
+import org.openelisglobal.common.services.StatusService;
 import org.openelisglobal.common.util.DateUtil;
+import org.openelisglobal.internationalization.MessageUtil;
+import org.openelisglobal.sample.service.SampleService;
 import org.openelisglobal.spring.util.SpringContext;
 import org.openelisglobal.test.service.TestService;
 import org.openelisglobal.test.valueholder.Test;
@@ -37,14 +42,16 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 	static String DATE_PATTERN = "yyyy-MM-dd";
 
 	private static final String CONTROL_ACCESSION_PREFIX = "PCC";
-	private static final String[] units = new String[100];
-	private static final int[] scaleIndex = new int[100];
+	//private static final String[] units = new String[100];
+	//private static final int[] scaleIndex = new int[100];
 	private static final String DELIMITER = "\\s";
 	double result = Double.NaN;
 	String line;
 	String[] data;
 
-
+	 private final String projectCode = MessageUtil.getMessage("sample.entry.project.LART");
+	String validStatusId = StatusService.getInstance().getStatusID(StatusService.AnalysisStatus.Finalized);
+	AnalysisService analysisDao =  SpringContext.getBean(AnalysisService.class);
 
 
 	static HashMap<String, Test> testNameMap = new HashMap<>();
@@ -106,7 +113,7 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 		testUnitMap.put("GLU3", "/1|U/L");
 		testUnitMap.put("GLU2", "/1|U/L");
 
-		System.out.println(testUnitMap);
+		// System.out.println(testUnitMap);
 
 
 
@@ -119,16 +126,17 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 	public boolean insert(List<String> lines, String currentUserId) {
 		List<AnalyzerResults> results = new ArrayList<>();
 		Integer Position = 0;
-
+		Integer Real_Position=0;
+		
 		for (Position = 0; Position < 5; Position++) {
 
 
 			for (Integer j = 1; j < lines.size(); j++) {
 				System.out.println("processing line #: "  + j);
-				line = lines.get(j).replace("\\s", "").trim();
+				line = lines.get(j).replace(DELIMITER, "").trim();
 				System.out.println(line);
 				data = line.split("\\s");
-				Integer Real_Position;
+				
 
 				AnalyzerResults aResult = new AnalyzerResults();
 				String currentAccessionNumber = data [5].trim();
@@ -136,6 +144,14 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 				String testKey = data [3].trim();
 				String date = data [1];
 
+				
+				SampleService sampleServ = SpringContext.getBean(SampleService.class);
+				if (currentAccessionNumber.startsWith(projectCode) || sampleServ.getSampleByAccessionNumber(aResult.getAccessionNumber())!=null )
+					{		
+				
+				
+				
+				
 				aResult.setTestId(testNameMap.get(testKey).getId());
 				aResult.setTestName(testNameMap.get(testKey).getName());
 				Real_Position = testPositionMap.get(testKey);
@@ -150,7 +166,7 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 					Result = data [12].trim();
 					aResult.setResult(Result.trim());
 				}
-
+					}
 
 				if (currentAccessionNumber.startsWith(CONTROL_ACCESSION_PREFIX)){
 					Result = data [14].trim();
@@ -163,14 +179,23 @@ public class CobasIntegra400Implementation extends AnalyzerLineInserter {
 				//System.out.println("***" + aResult.getAccessionNumber() + " " + aResult.getCompleteDate() + "***" + aResult.getResult()+ "***");
 
 				if (Real_Position.equals(Position)) {
-					results.add(aResult);
+					
+					
+					}
+					
+				List<Analysis> analyses=analysisDao.getAnalysisByAccessionAndTestId(aResult.getAccessionNumber(), aResult.getTestId());
+				for(Analysis analysis :analyses) {
+					if(analysis.getStatusId().equals(validStatusId)) break;
+					
+				}
+						results.add(aResult);
 				}
 
 
 
 			}
 
-		}
+		
 
 		return persistImport(currentUserId, results);
 

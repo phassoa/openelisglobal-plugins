@@ -16,38 +16,27 @@
  */
 package oe.plugin.analyzer;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-import spring.service.analysis.AnalysisService;
-import spring.service.analyzer.AnalyzerService;
-import spring.service.sample.SampleService;
-import spring.service.test.TestService;
-import spring.util.SpringContext;
-//import us.mn.state.health.lims.analyzer.dao.AnalyzerDAO;
-//import us.mn.state.health.lims.analyzer.daoimpl.AnalyzerDAOImpl;
-import us.mn.state.health.lims.analyzer.valueholder.Analyzer;
-import us.mn.state.health.lims.analyzerimport.analyzerreaders.AnalyzerLineInserter;
-import us.mn.state.health.lims.analyzerimport.analyzerreaders.AnalyzerReaderUtil;
-import us.mn.state.health.lims.analyzerresults.valueholder.AnalyzerResults;
-//import us.mn.state.health.lims.common.services.SampleService;
-import us.mn.state.health.lims.common.services.StatusService;
-import us.mn.state.health.lims.common.util.DateUtil;
-import us.mn.state.health.lims.common.util.StringUtil;
-//import us.mn.state.health.lims.test.daoimpl.TestDAOImpl;
-import us.mn.state.health.lims.test.valueholder.Test;
-//import us.mn.state.health.lims.analysis.dao.AnalysisDAO;
-//import us.mn.state.health.lims.analysis.daoimpl.AnalysisDAOImpl;
-import us.mn.state.health.lims.analysis.valueholder.Analysis;
+import org.openelisglobal.analysis.service.AnalysisService;
+import org.openelisglobal.analysis.valueholder.Analysis;
+import org.openelisglobal.analyzer.service.AnalyzerService;
+import org.openelisglobal.analyzer.valueholder.Analyzer;
+import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerLineInserter;
+import org.openelisglobal.analyzerimport.analyzerreaders.AnalyzerReaderUtil;
+import org.openelisglobal.analyzerresults.valueholder.AnalyzerResults;
+import org.openelisglobal.common.services.StatusService;
+import org.openelisglobal.common.util.ConfigurationProperties;
+import org.openelisglobal.common.util.ConfigurationProperties.Property;
+import org.openelisglobal.common.util.DateUtil;
+import org.openelisglobal.internationalization.MessageUtil;
+import org.openelisglobal.sample.service.SampleService;
+import org.openelisglobal.spring.util.SpringContext;
+import org.openelisglobal.test.service.TestService;
+import org.openelisglobal.test.valueholder.Test;
 
 
 
@@ -65,7 +54,7 @@ public class TaqMan96VLAnalyzerImplementation extends AnalyzerLineInserter
   private static String DELIMITER = "\\t";
   private static final String DATE_PATTERN = "yyyy/MM/dd HH:mm:ss";
   static String ANALYZER_ID ;
-  private final String projectCode = StringUtil.getMessageForKey("sample.entry.project.LART");
+  private final String projectCode = MessageUtil.getMessage("sample.entry.project.LART");
 
   private AnalyzerReaderUtil readerUtil = new AnalyzerReaderUtil();
   private String error;

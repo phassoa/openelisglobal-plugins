@@ -17,9 +17,10 @@
 
 package oe.plugin.analyzer;
 
+import java.util.Locale;
+
 import org.openelisglobal.common.services.PluginMenuService;
 import org.openelisglobal.common.services.PluginMenuService.KnownMenu;
-import org.openelisglobal.common.util.ConfigurationProperties;
 import org.openelisglobal.menu.valueholder.Menu;
 import org.openelisglobal.plugin.MenuPlugin;
 
@@ -43,9 +44,9 @@ public class FacsCantoIIMenu extends MenuPlugin {
 
         service.addMenu(menu);
 		//Analyzer name in English
-        service.insertLanguageKeyValue("banner.menu.results.FacsCantoII","Immunology: FacsCantoII", ConfigurationProperties.LOCALE.ENGLISH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.FacsCantoII","Immunology: FacsCantoII", Locale.ENGLISH.toLanguageTag());
 		//Analyzer name in French
-        service.insertLanguageKeyValue("banner.menu.results.FacsCantoII","Immunologie: FacsCantoII", ConfigurationProperties.LOCALE.FRENCH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.FacsCantoII","Immunologie: FacsCantoII", Locale.FRENCH.toLanguageTag());
 	}
 	
 }

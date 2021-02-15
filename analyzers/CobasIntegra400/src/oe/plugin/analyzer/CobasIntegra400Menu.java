@@ -17,6 +17,8 @@
 
 package oe.plugin.analyzer;
 
+import java.util.Locale;
+
 import org.openelisglobal.common.services.PluginMenuService;
 import org.openelisglobal.common.services.PluginMenuService.KnownMenu;
 import org.openelisglobal.common.util.ConfigurationProperties;
@@ -43,9 +45,9 @@ public class CobasIntegra400Menu extends MenuPlugin {
 
         service.addMenu(menu);
 		//Analyzer name in English
-        service.insertLanguageKeyValue("banner.menu.results.CobasIntegra400","Biochemistry: Cobas Integra 400+", ConfigurationProperties.LOCALE.ENGLISH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.CobasIntegra400","Biochemistry: Cobas Integra 400+", Locale.ENGLISH.toLanguageTag());
 		//Analyzer name in French
-        service.insertLanguageKeyValue("banner.menu.results.CobasIntegra400","Biochimie: Cobas Integra 400+", ConfigurationProperties.LOCALE.FRENCH.getRepresentation());
+        service.insertLanguageKeyValue("banner.menu.results.CobasIntegra400","Biochimie: Cobas Integra 400+", Locale.ENGLISH.toLanguageTag());
 	}
 	
 }
